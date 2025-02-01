@@ -38,7 +38,7 @@ import '@/app/ui/global.css';
 We can use clsx to conditionally apply styling classes depending on the value of a variable.
 
 In `/app/ui/invoices/status.tsx`
-```
+```TSX
 import clsx from 'clsx';
  
 export default function InvoiceStatus({ status }: { status: string }) {
@@ -55,3 +55,42 @@ export default function InvoiceStatus({ status }: { status: string }) {
     // ...
 )}
 ```
+
+## Optimizing Fonts and Images
+
+#### Fonts
+Google fonts are included in Next JS. 
+
+We define our fonts in `app/ui/fonts.ts`
+
+We can then import and apply our fonts within our components. 
+
+Example: `app/layout.tsx`
+```TSX
+// Import font
+import { inter } from '@/app/ui/fonts';
+
+// Applying the font to the body div
+<body className={`${inter.className} antialiased`}>{children}</body>
+
+```
+
+https://nextjs.org/docs/pages/building-your-application/optimizing/fonts
+
+#### Images
+Instead of using the HTML `<img>` tag, we should use the NextJS Image component that comes with automatic image optimization and resizing. 
+
+Example: `/app/page.tsx`
+
+```TSX
+import Image from 'next/image';
+
+<Image
+        src="/hero-desktop.png"
+        width={1000}
+        height={760}
+        className="hidden md:block"
+        alt="Screenshots of the dashboard project showing desktop version"
+      />
+```
+
