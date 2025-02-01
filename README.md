@@ -94,3 +94,76 @@ import Image from 'next/image';
       />
 ```
 
+## Pages Layouts and Routing
+In Next JS, nested folders are used to create routes. 
+
+the `/app` folder is the root directory
+
+A `page.tsx` file is the component that defines the page layout.
+
+![routing1](https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Ffolders-to-url-segments.png&w=3840&q=75 "Routing 1")
+
+For example, the `/app/page.tsx` file corresponds to the root route `/`
+
+`/app/dashboard/page.tsx` corresponds to the `/dashboard` route
+
+![routing2](https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fdashboard-route.png&w=3840&q=75 "Routing 2")
+
+#### Shared Layout
+
+We can use the `layout.tsx` file to create a shared UI template that can be used by multiple pages. 
+
+Example: `app/dashboard/layout.tsx`. We define a navigation bar in the left side of this layout. This layout will be applied to all the pages and subpages in the dashboard folder, such as `/dashboard`, `/dashboard/customers`, `/dashboard/invoices`
+
+The Layout component takes in the `children` prop. This is where the rest of the pages will be rendered. 
+
+#### Navigation
+The `<Link/>` component allows us to do client side navigation. 
+
+The Link component is similar to using `<a>` tags, but instead of `<a href="…">`, you use `<Link href="…">`
+
+Link prefetches the code for the linked route. This allows for instantaneous page transitions.
+
+`/app/ui/dashboard/nav-links.tsx`
+We start by importing the Link component from the Next JS library
+```TSX
+import Link from 'next/link';
+```
+
+We then replace all the a tags with Link tags. 
+
+#### Showing Active Pages
+We can use the `usePathName()` Hook to determine the current URL path. 
+
+Since this is a React Hook, it will only work on client side components. 
+
+we need to specify `'use client';` on top of the component file. 
+
+Example in `/app/ui/dashboard/nav-links.tsx`:
+
+We import the React Hook
+```TSX
+import { usePathname } from 'next/navigation';
+```
+
+We assign the current URL path to a variable
+```TSX
+export default function NavLinks() {
+  const pathname = usePathname();
+  // ...
+}
+```
+
+We can use clsx to apply styling classes when the pathname matches the current link
+```TSX
+import clsx from 'clsx';
+
+className={clsx(
+              'flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3',
+              {
+                'bg-sky-100 text-blue-600': pathname === link.href,
+              },
+            )}
+```
+
+
