@@ -109,6 +109,12 @@ For example, the `/app/page.tsx` file corresponds to the root route `/`
 
 ![routing2](https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fdashboard-route.png&w=3840&q=75 "Routing 2")
 
+In addition, any folder with round brackets () won’t be included in the URL path.
+
+`/app/dashboard/(overview)/page.tsx` corresponds to the `/dashboard` route since it sits directly inside the dashboard folder, and (overview) will be ignored as the URL path.
+
+![routingoverview](https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Froute-group.png&w=3840&q=75 "Routing Overview")
+
 #### Shared Layout
 
 We can use the `layout.tsx` file to create a shared UI template that can be used by multiple pages. 
@@ -237,6 +243,44 @@ const data = await Promise.all([
     ]);
 ```
 
+## Loading and Streaming
+The `loading.tsx` page is built on top of React Suspense. It will be shown while the main `page.tsx` is loading.
 
+We can also apply the loading UI to an individual component instead of the entire page. 
+
+We start by importing the React Suspense component and wrapping it around the slow-loading component. We provide a fallback component, that will be rendered while the main component is loading. 
+
+`/app/dashboard/(overview)/page.tsx`
+```jsx
+import { Suspense } from 'react';
+import { RevenueChartSkeleton } from '@/app/ui/skeletons';
+
+//Wrap Suspense around slow loading component
+<Suspense fallback={<RevenueChartSkeleton />}>
+          <RevenueChart />
+</Suspense>
+```
+
+We refactor the code such that the async function call to fetch data occurs within the component itself. This also simplifies the code, removing the need to pass props. 
+
+Inside the component:
+`/app/ui/dashboard/revenue-chart.tsx`
+```jsx
+import { fetchRevenue } from '@/app/lib/data';
+
+export default async function RevenueChart() { // Make component async, remove the props
+  const revenue = await fetchRevenue(); // Fetch data inside the component
+  ...
+}
+```
+
+We can also the loading UI to groups of components. 
+
+In example below, CardWrapper contains several components grouped together. The loading UI will apply to the entire group.
+```jsx
+<Suspense fallback={<CardsSkeleton />}>
+          <CardWrapper />
+</Suspense>
+```
 
 
