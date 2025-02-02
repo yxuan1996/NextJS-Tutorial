@@ -166,4 +166,77 @@ className={clsx(
             )}
 ```
 
+## API Routes
+
+We use `page.tsx` for page displays
+
+On the other hand, we use `route.tsx`  to create web APIs
+
+`route.tsx`
+
+```jsx
+export async function GET() {
+  return Response.json({ message: 'Hello World' })
+}
+```
+
+Next JS supports all REST API types such as POST, UPDATE, DELETE
+
+See the documentation on how to pass in request payloads etc: 
+https://nextjs.org/docs/app/api-reference/file-conventions/route 
+
+
+In `app/seed/route.ts` we define a several POST requests to insert and seed data into our Postgres SQL database. 
+
+Given a JSON list of items to insert into a DB, we use .map() to insert the items one by one, and wrap the entire code using `Promise.all()`.  This returns a single successful Promise if all the insertions are successful. 
+
+```TSX
+const insertedCustomers = await Promise.all(
+    customers.map(
+      (customer) => sql`
+        INSERT INTO customers (id, name, email, image_url)
+        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url})
+        ON CONFLICT (id) DO NOTHING;
+      `,
+    ),
+  );
+```
+
+
+## Fetching data from SQL
+In `/app/lib/data.ts` we import the postgres library and write SQL queries to fetch data from our SQL database. 
+
+Be sure to use Async Await since we need to wait for the data to load. 
+
+#### Request Waterfall vs Parallel Requests
+
+Using multiple Async / Await request results in a request waterfall, in which each request is executed sequentially and blocks one another. 
+
+`fetchRevenue() -> fetchLatestInvoices() -> fetchCardData()`
+
+```TSX
+const revenue = await fetchRevenue();
+const latestInvoices = await fetchLatestInvoices(); // wait for fetchRevenue() to finish
+const {
+  numberOfInvoices,
+  numberOfCustomers,
+  totalPaidInvoices,
+  totalPendingInvoices,
+} = await fetchCardData(); // wait for fetchLatestInvoices() to finish
+```
+
+![requestwaterfall](https://nextjs.org/_next/image?url=%2Flearn%2Fdark%2Fsequential-parallel-data-fetching.png&w=3840&q=75 "Request Waterfall")
+
+To fetch data requests in parallel, we use `Promise.all()`
+
+```TSX
+const data = await Promise.all([
+      invoiceCountPromise,
+      customerCountPromise,
+      invoiceStatusPromise,
+    ]);
+```
+
+
+
 
