@@ -283,4 +283,140 @@ In example below, CardWrapper contains several components grouped together. The 
 </Suspense>
 ```
 
+## Search and Pagination
+
+We will be using URL search params to manage search. This allows the search to be handled server-side. 
+
+We will be using the following React hooks:
+
+`useSearchParams` 
+
+Obtain search params from the URL
+
+For example, the URL of `/dashboard/invoices?page=1&query=pending` will translate to the following search params: `{page: '1', query: 'pending'}`
+
+`usePathname` 
+
+Obtain the current URL path
+
+`useRouter`
+
+Enables navigation between routes
+
+Workflow:
+
+1. Capture the user's input.
+2. Update the URL with the search params.
+3. Keep the URL in sync with the input field.
+4. Update the table to reflect the search query.
+
+#### 1) Capture user input
+In `/app/ui/search.tsx` we define the search component. 
+
+- We have a `<input>` component that allows user to enter the search terms. 
+- We attach an 'onChange' event listener that calls a function when the input changes. 
+
+#### 2) Update the URL with search params
+- We use the `useSearchParams` React hook to generate URL params (Format: ?page=1&query=a)
+
+```TSX
+import { useSearchParams } from 'next/navigation';
+
+export default function Search({ placeholder }: { placeholder: string }) {
+  // Initialize useSearchParams hook
+  const searchParams = useSearchParams();
+  
+  function handleSearch(term: string) {
+    const params = new URLSearchParams(searchParams);
+    console.log(term);
+
+    // Generate URL params based on the search query value
+    // If the search query is empty, remove the URL params
+    if (term) {
+      params.set('query', term);
+    } else {
+      params.delete('query');
+    }
+  }
+  ...
+}
+```
+
+- We get the current URL using `usePathname`
+- We use `useRouter` to replace the URL with (baseURL + search params)
+
+```TSX
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+
+export default function Search() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
+
+  function handleSearch(term: string) {
+    ...
+    replace(`${pathname}?${params.toString()}`);
+  }
+}
+```
+
+#### 3) Keep the URL and input in sync
+We pass a default value to the search params
+```TSX
+defaultValue={searchParams.get('query')?.toString()}
+```
+
+#### 4) Update the Table
+We modify the invoices page to accept a prop called `searchParams` and pass it to the Table component
+
+```TSX
+export default async function Page(props: {
+  searchParams?: Promise<{
+    query?: string;
+    page?: string;
+  }>;
+}) {
+  const searchParams = await props.searchParams;
+  const query = searchParams?.query || '';
+  const currentPage = Number(searchParams?.page) || 1;
+
+  return(
+    ...
+    <Suspense key={query + currentPage} fallback={<InvoicesTableSkeleton />}>
+        <Table query={query} currentPage={currentPage} />
+    </Suspense>
+  )
+}
+```
+
+#### Debouncing
+Currently, every keystroke causes the onChange function to fire, which results in significant server load. 
+
+We can use debouncing to limit the rate that the function fires. 
+
+```
+pnpm i use-debounce
+```
+
+In `/app/ui/search.tsx` 
+- We import the debounce library and limit the handleSearch function to run 300ms after the user finishes typing. 
+
+```TSX
+import { useDebouncedCallback } from 'use-debounce';
+
+const handleSearch = useDebouncedCallback((term) => {
+  console.log(`Searching... ${term}`);
+ 
+  const params = new URLSearchParams(searchParams);
+  if (term) {
+    params.set('query', term);
+  } else {
+    params.delete('query');
+  }
+  replace(`${pathname}?${params.toString()}`);
+}, 300);
+```
+
+
+
 
