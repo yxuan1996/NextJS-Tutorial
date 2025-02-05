@@ -417,6 +417,52 @@ const handleSearch = useDebouncedCallback((term) => {
 }, 300);
 ```
 
+## Mutate Data (Form Submission)
+
+In this section, we will define a server action, which is a function that will run when a form is submitted. 
+
+Inside the server action, we will validate the data and insert it into the database. 
+
+#### Create Form
+- In `/dashboard/invoices/create/page.tsx` we import and display the form component from `/app/ui/invoices/create-form`.
+- When the form is submitted, the `createInvoice` function that is defined in `app/lib/actions.ts` is called.
+- Note that `app/lib/actions.ts` has the 'use server' directive. This means the function will run server side with encryption, which enhances security. 
+- We import the zod library, use it to define a schema, and then use it to parse incoming form data. We then run a SQL statement to insert data into the database.
+
+#### Update Form (Dynamic Route)
+The update form is similar to the create form, except that we need to obtain the invoice id from the dynamic route URL. 
+
+We create a dynamic route using square brackets. 
+
+For example: Edit Form page `invoices/[id]/edit/page.tsx`
+
+The page component will accept an id as the prop.
+
+![dynamic_route](https://nextjs.org/_next/image?url=%2Flearn%2Flight%2Fedit-invoice-route.png&w=3840&q=75 "Dynamic Route")
+
+- Inside `/app/ui/invoices/buttons.tsx`, the `UpdateInvoice` function contains a `<Link>` button with an URL link. We will update this URL link to accept a dynamic id. (This is the button with a pencil icon beside each invoice)
+```TSX
+href={`/dashboard/invoices/${id}/edit`}
+```
+
+- We cannot pass an argument directly into a server action. The following code does not work: `<form action={updateInvoice(id)}>`
+- Instead, we need to bind the server action to the argument. This ensures that all values passed to the server action are encoded. 
+```TSX
+// Bind the id to the server action
+const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+
+// Call the updated server action in the form
+return <form action={updateInvoiceWithId}>{/* ... */}</form>;
+```
+
+Alternatively, we can also pass the id to the server via a hidden input field in the form.
+```HTML
+<input type="hidden" name="id" value={invoice.id} />
+```
+
+
+
+
 
 
 
