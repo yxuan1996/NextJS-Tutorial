@@ -460,6 +460,27 @@ Alternatively, we can also pass the id to the server via a hidden input field in
 <input type="hidden" name="id" value={invoice.id} />
 ```
 
+## Error Handling
+The `error.tsx` page will be displayed if there are any errors on the main page. It serves as a fallback UI. 
+
+Note that `error.tsx` needs to be a client component, so it will work offline in case of network errors.
+
+#### 404 (Not found) errors
+We can use the `Not Found` component from Next JS to handle undefined routes
+```
+import { notFound } from 'next/navigation';
+```
+
+We can then invoke the not found page if an item doesn't exist
+```TSX
+if (!invoice) {
+    notFound();
+  }
+```
+
+Lastly we create the `not-found.tsx` file. This will contain the UI for the not found page.
+
+
 
 
 
