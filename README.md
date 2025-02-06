@@ -480,8 +480,116 @@ if (!invoice) {
 
 Lastly we create the `not-found.tsx` file. This will contain the UI for the not found page.
 
+## Accessibility
+We can use the ESLint plugin to help detect accessibility issues. 
 
+Add lint in `package.json`
+```JSON
+"scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start",
+    "lint": "next lint"
+},
+```
 
+Then run `pnpm lint` in the terminal to install ESLint
+
+#### Improving Form Accessibility
+There are 3 main things we can do to improve form accessibility. 
+
+- Semantic HTML: Using semantic elements `(<input>, <option>, etc)` instead of `<div>`. This allows assistive technologies (AT) to focus on the input elements and provide appropriate contextual information to the user, making the form easier to navigate and understand.
+- Labelling: Including `<label>` and the htmlFor attribute ensures that each form field has a descriptive text label. This improves AT support by providing context and also enhances usability by allowing users to click on the label to focus on the corresponding input field.
+- Focus Outline: The fields are properly styled to show an outline when they are in focus. This is critical for accessibility as it visually indicates the active element on the page, helping both keyboard and screen reader users to understand where they are on the form. You can verify this by pressing tab.
+
+#### Server side form validation
+
+We can use the `useActionState` React hook to update state based on a form action (such as form submission). (https://react.dev/reference/react/useActionState)
+
+As such, `useActionState` can act as a middleware and perform server side form validation before the form data is actually submitted. 
+
+In `app/ui/invoices/create-form.tsx`:
+- We import the useActionState hook. 
+- We initialize the hook, passing in the `createInvoice` function that will run when the form is submitted.
+- The initial state is an object with 2 empty keys: message and errors.
+- We replace the form action with hook action. 
+
+```TSX
+import { useActionState } from 'react';
+ 
+export default function Form({ customers }: { customers: CustomerField[] }) {
+  const initialState: State = { message: null, errors: {} };
+  const [state, formAction] = useActionState(createInvoice, initialState);
+ 
+  return <form action={formAction}>...</form>;
+}
+```
+
+In `/app/lib/actions.ts` we use zod to define form validations in the schema. 
+
+We also define the State which describes the datatypes of the error messages
+```TSX
+export type State = {
+  errors?: {
+    customerId?: string[];
+    amount?: string[];
+    status?: string[];
+  };
+  message?: string | null;
+};
+```
+
+Use safeParse() to validate form data. It includes a built in try/catch block to handle parsing errors
+```TSX
+const validatedFields = CreateInvoice.safeParse({
+    customerId: formData.get('customerId'),
+    amount: formData.get('amount'),
+    status: formData.get('status'),
+  });
+```
+
+If the form validation fails, return the error message so that we can display on page.
+```TSX
+// If form validation fails, return errors early. Otherwise, continue.
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Missing Fields. Failed to Create Invoice.',
+      };
+    }
+```
+
+Back in the form `/app/ui/invoices/create-form.tsx` we use an aria to display the error for each field
+```TSX
+// Add aria-describedby to the select form field
+        <select
+          id="customer"
+          name="customerId"
+          className="peer block w-full rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
+          defaultValue=""
+          aria-describedby="customer-error"
+        >
+          <option value="" disabled>
+            Select a customer
+          </option>
+          {customers.map((name) => (
+            <option key={name.id} value={name.id}>
+              {name.name}
+            </option>
+          ))}
+        </select>
+
+// This div will display the error messages, if any
+      <div id="customer-error" aria-live="polite" aria-atomic="true">
+        {state.errors?.customerId &&
+          state.errors.customerId.map((error: string) => (
+            <p className="mt-2 text-sm text-red-500" key={error}>
+              {error}
+            </p>
+          ))}
+      </div>
+
+```
 
 
 
