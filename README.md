@@ -688,3 +688,32 @@ import { signOut } from '@/auth';
         </form>
 ```
 
+## Metadata
+Metadata helps in enhancing SEO, improving accessibility and search rankings. 
+
+This page describes the types of Metadata: 
+https://nextjs.org/learn/dashboard-app/adding-metadata
+
+NextJS can generate metadata dynamically in a `layout.ts` or `page.ts` file:
+https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function
+
+We can also define metadata using the following files:
+- favicon.ico, apple-icon.jpg, and icon.jpg: Utilized for favicons and icons
+- opengraph-image.jpg and twitter-image.jpg: Employed for social media images
+- robots.txt: Provides instructions for search engine crawling
+- sitemap.xml: Offers information about the website's structure
+
+In `/app/layout.tsx` we import Metadata from Next and create a new Metadata object. This will be inherited by all pages that use it. 
+
+Note that the  `%s` in the template will be replaced with the specific page title.
+
+We can also define metadata for specific pages. This will override the metadata in the parent page. 
+
+In `/app/dashboard/invoices/page.tsx` we update the page title
+```TSX
+import { Metadata } from 'next';
+ 
+export const metadata: Metadata = {
+  title: 'Invoices',
+};
+```
