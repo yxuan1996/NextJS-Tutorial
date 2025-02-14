@@ -592,6 +592,99 @@ Back in the form `/app/ui/invoices/create-form.tsx` we use an aria to display th
 ```
 
 
+## Authentication
+We will use NextJS AuthJS to add authentication to our application. 
+https://nextjs.authjs.dev 
 
+Installation
+```
+pnpm i next-auth@beta
+```
 
+We generate a secret key for our application. This key is used to encrypt cookies. 
+```
+openssl rand -base64 32
+```
+
+In `.env` set the AUTH_SECRET= as the secret key value. Also remember to configure the environmental variables for our hosting provider (Vercel etc). 
+
+At the root of the project we create `auth.config.ts`
+```TS
+import type { NextAuthConfig } from 'next-auth';
+ 
+export const authConfig = {
+  pages: {
+    signIn: '/login',
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      if (isOnDashboard) {
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login page
+      } else if (isLoggedIn) {
+        return Response.redirect(new URL('/dashboard', nextUrl));
+      }
+      return true;
+    },
+  },
+  providers: [], // Add providers with an empty array for now
+} satisfies NextAuthConfig;
+```
+
+- We use the pages option to configure the custom sign-in, sign-out and error pages. 
+- For the example above, our user will be redirected to our custom sign-in page at `/login` instead of the default page.
+- Callbacks are a function that will check whether the user is authorized to access that route. 
+
+Next, we create `middleware.ts` at the root of the project. We import the NextAuth AuthConfig. 
+
+This allows us to create middleware that will run the callback function and check for authentication before render the pages.
+
+The matcher allows us to filter which routes the middleware will run on.
+```TS
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
+ 
+export default NextAuth(authConfig).auth;
+ 
+export const config = {
+  // https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
+  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
+};
+```
+
+We create a new file `auth.ts` 
+
+- We specify the `Credentials` provider (Login with email and password). There are other types of providers (OAuth) that allow us to login with Google, Facebook etc.
+- We define the `authorize` function to handle the authentication logic. This is a built-in function in NextJS AuthJS that expects a credential input and outputs the User object or null. 
+  - We use Zod to validate the user email and password in the form. 
+  - We call the `getUser` function to check whether the user exists in the database.
+  - We use `bcrypt.compare` to check if the passwords match. Bear in mind that the passwords should be stored in salted form in the database. 
+  - If the passwords match, return the user. 
+
+In `app/lib/actions.ts` we create a new `authenticate` server action, importing the SignIn function from `auth.ts`
+
+Lastly, we update the `app/ui/login-form.tsx` to use the `useActionState` hook to call the `authenticate` server action, and handle any form errors. 
+
+#### Adding SignOut to the SideNav
+In `/ui/dashboard/sidenav.tsx` we import the signOut function from `auth.js`
+
+We attach it as a callback function in a from, and wrap it around a button. 
+
+```TSX
+import { signOut } from '@/auth';
+
+        <form
+          action={async () => {
+            'use server';
+            await signOut({ redirectTo: '/' });
+          }}
+        >
+          <button className="flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium hover:bg-sky-100 hover:text-blue-600 md:flex-none md:justify-start md:p-2 md:px-3">
+            <PowerIcon className="w-6" />
+            <div className="hidden md:block">Sign Out</div>
+          </button>
+        </form>
+```
 
